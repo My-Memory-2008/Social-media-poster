@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -114,6 +114,336 @@
       }
     } catch (err) {
       alert("Network Error: " + err.message);
+    }
+  }
+</script>
+</body>
+</html> -->
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Media Hub</title>
+  <style>
+    :root {
+      --primary: #0070f3;
+      --primary-hover: #0051cb;
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --text: #333333;
+      --text-muted: #666666;
+      --border: #e1e4e8;
+      --success: #10b981;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .panel {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 600px;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+    }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .tab.active {
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      margin-bottom: -2px;
+    }
+    .group { margin-bottom: 20px; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+    textarea {
+      width: 100%; height: 100px; padding: 12px; box-sizing: border-box;
+      border: 1px solid var(--border); border-radius: 6px; font-size: 14px; resize: vertical; outline: none;
+    }
+    textarea:focus { border-color: var(--primary); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .option {
+      display: flex; align-items: center; padding: 10px;
+      border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 14px; background: white;
+    }
+    .option input { margin-right: 10px; }
+    
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      background: #fafbfc;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .drop-zone.hover {
+      border-color: var(--primary);
+      background: #f0f7ff;
+    }
+    .drop-zone p { margin: 0 0 10px 0; font-size: 14px; color: var(--text-muted); }
+    .file-input { display: none; }
+    
+    .preview-list {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #eee;
+    }
+    .preview-item img, .preview-item video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .preview-item .progress-bar {
+      position: absolute; bottom: 0; left: 0; height: 4px;
+      background: var(--success); width: 0%; transition: width 0.1s;
+    }
+    .btn {
+      background-color: var(--primary); color: white; border: none; padding: 14px;
+      font-size: 16px; font-weight: 600; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px;
+    }
+    .btn:hover { background-color: var(--primary-hover); }
+    .btn:disabled { background-color: var(--border); cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+<div class="panel">
+  <h2 style="margin: 0 0 15px 0;">📣 Multi-Platform Broadcast</h2>
+  
+  <div class="tabs">
+    <div class="tab active" id="imgTabBtn" onclick="switchTab('image-tab')">🖼️ Multi-Image Post</div>
+    <div class="tab" id="vidTabBtn" onclick="switchTab('video-tab')">🎬 Single Video Post</div>
+  </div>
+  
+  <div class="group">
+    <label for="postText">Message Content</label>
+    <textarea id="postText" placeholder="What are we sharing with the world today?"></textarea>
+  </div>
+
+  <div class="group">
+    <label>Publish Channels</label>
+    <div class="grid">
+      <label class="option"><input type="checkbox" value="twitter" class="channel"> X / Twitter</label>
+      <label class="option"><input type="checkbox" value="linkedin" class="channel"> LinkedIn</label>
+      <label class="option"><input type="checkbox" value="reddit" class="channel"> Reddit</label>
+      <label class="option"><input type="checkbox" value="pinterest" class="channel"> Pinterest</label>
+    </div>
+  </div>
+
+  <!-- Section A: Bulk Images -->
+  <div id="image-tab" class="tab-content">
+    <div class="group">
+      <label>Bulk Image Assets (Up to 20 images)</label>
+      <div class="drop-zone" id="imageDropZone" onclick="document.getElementById('imageFiles').click()">
+        <p>Drag & drop multiple images here, or <b>browse</b></p>
+        <span style="font-size:12px; color:var(--text-muted);">Supports PNG, JPEG, WEBP</span>
+        <input type="file" id="imageFiles" class="file-input" accept="image/*" multiple>
+      </div>
+      <div class="preview-list" id="imagePreviews"></div>
+    </div>
+  </div>
+
+  <!-- Section B: Video -->
+  <div id="video-tab" class="tab-content" style="display:none;">
+    <div class="group">
+      <label>Video File Asset</label>
+      <div class="drop-zone" id="videoDropZone" onclick="document.getElementById('videoFile').click()">
+        <p>Drag & drop a video file here, or <b>browse</b></p>
+        <span style="font-size:12px; color:var(--text-muted);">Supports MP4, MOV, WEBM</span>
+        <input type="file" id="videoFile" class="file-input" accept="video/*">
+      </div>
+      <div class="preview-list" id="videoPreviews"></div>
+    </div>
+  </div>
+
+  <button class="btn" id="submitBtn" onclick="broadcastPost()">Publish Now</button>
+</div>
+<script>
+  let activeTab = 'image-tab';
+  let uploadedImages = [];
+  let uploadedVideoUrl = null;
+
+  function switchTab(tabId) {
+    activeTab = tabId;
+    document.getElementById('imgTabBtn').classList.toggle('active', tabId === 'image-tab');
+    document.getElementById('vidTabBtn').classList.toggle('active', tabId === 'video-tab');
+    document.getElementById('image-tab').style.display = tabId === 'image-tab' ? 'block' : 'none';
+    document.getElementById('video-tab').style.display = tabId === 'video-tab' ? 'block' : 'none';
+  }
+
+  // Bind drag-and-drop actions to HTML fields
+  setupDropZone('imageDropZone', 'imageFiles', handleImageUploads);
+  setupDropZone('videoDropZone', 'videoFile', handleVideoUpload);
+
+  function setupDropZone(zoneId, inputId, uploadHandler) {
+    const zone = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('hover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('hover'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('hover');
+      if (e.dataTransfer.files.length) uploadHandler(e.dataTransfer.files);
+    });
+    input.addEventListener('change', () => {
+      if (input.files.length) uploadHandler(input.files);
+    });
+  }
+
+  // Securely upload chunks straight to Cloudflare R2
+  async function uploadMediaFile(file, previewElement) {
+    try {
+      const response = await fetch('/api/r2-sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type })
+      });
+      
+      if (!response.ok) throw new Error("Failed to get R2 upload authorization tokens.");
+      const { uploadUrl, publicUrl } = await response.json();
+
+      const progress = previewElement.querySelector('.progress-bar');
+      const xhr = new XMLHttpRequest();
+      
+      return new Promise((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentage = Math.round((e.loaded / e.total) * 100);
+            progress.style.width = percentage + '%';
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200 || xhr.status === 204) resolve(publicUrl);
+          else reject(new Error("R2 upload rejected by storage node."));
+        });
+        
+        xhr.open('PUT', uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+      });
+    } catch (err) {
+      alert(`Upload failed: ${file.name} - ${err.message}`);
+      previewElement.remove();
+      return null;
+    }
+  }
+
+  async function handleImageUploads(files) {
+    const container = document.getElementById('imagePreviews');
+    document.getElementById('submitBtn').disabled = true;
+
+    for (let file of Array.from(files).slice(0, 20)) {
+      const item = document.createElement('div');
+      item.className = 'preview-item';
+      item.innerHTML = `<img><div class="progress-bar"></div>`;
+      
+      const img = item.querySelector('img');
+      img.src = URL.createObjectURL(file);
+      container.appendChild(item);
+
+      const uploadedUrl = await uploadMediaFile(file, item);
+      if (uploadedUrl) uploadedImages.push(uploadedUrl);
+    }
+    document.getElementById('submitBtn').disabled = false;
+  }
+
+  async function handleVideoUpload(files) {
+    const container = document.getElementById('videoPreviews');
+    container.innerHTML = ''; 
+    uploadedVideoUrl = null;
+    document.getElementById('submitBtn').disabled = true;
+
+    const file = files[0];
+    if (!file) return;
+
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.innerHTML = `<video muted loop autoplay></video><div class="progress-bar"></div>`;
+    
+    const video = item.querySelector('video');
+    video.src = URL.createObjectURL(file);
+    container.appendChild(item);
+
+    const uploadedUrl = await uploadMediaFile(file, item);
+    if (uploadedUrl) uploadedVideoUrl = uploadedUrl;
+    document.getElementById('submitBtn').disabled = false;
+  }
+
+  async function broadcastPost() {
+    const text = document.getElementById('postText').value.trim();
+    const platforms = Array.from(document.querySelectorAll('.channel:checked')).map(el => el.value);
+
+    if (!text || platforms.length === 0) {
+      alert("Please enter a text description and select at least one social media channel.");
+      return;
+    }
+
+    const payload = {
+      text: text,
+      platforms: platforms,
+      mediaType: activeTab === 'image-tab' ? 'images' : 'video',
+      mediaUrls: activeTab === 'image-tab' ? uploadedImages : (uploadedVideoUrl ? [uploadedVideoUrl] : [])
+    };
+
+    try {
+      const response = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert("Success! Content payload sent out to the GitHub Action runner.");
+        location.reload(); 
+      } else {
+        alert("Routing error: " + await response.text());
+      }
+    } catch (err) {
+      alert("Network Connection Timeout: " + err.message);
     }
   }
 </script>

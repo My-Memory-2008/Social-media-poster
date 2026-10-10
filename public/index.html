@@ -1,0 +1,47 @@
+async function submitPost() {
+  const text = document.getElementById('postText').value;
+  const mediaUrl = document.getElementById('mediaUrl').value;
+  const timeInput = document.getElementById('scheduleTime').value;
+  const platforms = Array.from(document.querySelectorAll('.platform-check:checked')).map(el => el.value);
+  
+  if (!text || platforms.length === 0 || !timeInput) {
+    alert("Please fill all required inputs.");
+    return;
+  }
+
+  // Calculate the exact seconds to wait before executing
+  const targetTime = new Date(timeInput).getTime();
+  const currentTime = Date.now();
+  const delaySeconds = Math.max(0, Math.floor((targetTime - currentTime) / 1000));
+
+  // --- GitHub API Configurations ---
+  const GITHUB_PAT = "YOUR_PERSONAL_ACCESS_TOKEN"; // Must have 'repo' workflow execution scopes
+  const REPO_OWNER = "YOUR_GITHUB_USERNAME";
+  const REPO_NAME = "YOUR_REPOSITORY_NAME";
+
+  const payload = {
+    event_type: "schedule_post", // Matches 'types' in workflow yaml
+    client_payload: {
+      text: text,
+      platforms: platforms,
+      media_url: mediaUrl,
+      delay_seconds: delaySeconds
+    }
+  };
+
+  const response = await fetch(`https://github.com{REPO_OWNER}/${REPO_NAME}/dispatches`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${GITHUB_PAT}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (response.status === 204) {
+    alert(`Post sent to GitHub! Action will run and delay publication for ${delaySeconds} seconds.`);
+  } else {
+    alert("Failed to communicate with GitHub Actions: " + await response.text());
+  }
+}

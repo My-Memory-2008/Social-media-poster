@@ -1,24 +1,22 @@
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
-    const { text, platforms, mediaUrl, delaySeconds } = body;
+    const { text, platforms, mediaUrl } = body;
 
-    // Pull environmental variables safely from your Cloudflare Pages Dashboard Settings
+    // Pull sensitive repo tokens from Cloudflare Environment variables
     const GITHUB_PAT = context.env.GITHUB_PAT;
     const REPO_OWNER = context.env.REPO_OWNER;
     const REPO_NAME = context.env.REPO_NAME;
 
     const githubPayload = {
-      event_type: "schedule_post",
+      event_type: "instant_post", // Must match types in your .yml workflow file
       client_payload: {
         text: text,
         platforms: platforms,
-        media_url: mediaUrl,
-        delay_seconds: delaySeconds
+        media_url: mediaUrl
       }
     };
 
-    // Forward the dispatch trigger to GitHub's infrastructure
     const response = await fetch(`https://github.com{REPO_OWNER}/${REPO_NAME}/dispatches`, {
       method: 'POST',
       headers: {
@@ -37,7 +35,7 @@ export async function onRequestPost(context) {
       });
     } else {
       const errorText = await response.text();
-      return new Response(`GitHub API Error: ${errorText}`, { status: response.status });
+      return new Response(`GitHub API error: ${errorText}`, { status: response.status });
     }
 
   } catch (err) {

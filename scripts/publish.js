@@ -8,7 +8,7 @@ const {
 
 async function run() {
   const platforms = JSON.parse(POST_PLATFORMS || '[]');
-  console.log(`Starting publication routine for: ${platforms.join(', ')}`);
+  console.log(`🚀 Starting instant broadcast for platforms: ${platforms.join(', ')}`);
 
   if (platforms.includes('twitter')) await postToTwitter();
   if (platforms.includes('linkedin')) await postToLinkedIn();
@@ -17,18 +17,29 @@ async function run() {
 }
 
 async function postToTwitter() {
+  console.log('Sending to X (Twitter)...');
+  // Uses X API v2 (Requires OAuth 2.0 User Token / Bearer Token with tweet.write scope)
   const res = await fetch('https://twitter.com', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${TWITTER_BEARER_TOKEN}`, 'Content-Type': 'application/json' },
+    headers: { 
+      'Authorization': `Bearer ${TWITTER_BEARER_TOKEN}`, 
+      'Content-Type': 'application/json' 
+    },
     body: JSON.stringify({ text: POST_TEXT })
   });
-  console.log(`Twitter Status: ${res.status} - ${await res.text()}`);
+  console.log(`X Status: ${res.status} - ${await res.text()}`);
 }
 
 async function postToLinkedIn() {
+  console.log('Sending to LinkedIn...');
+  // Uses modern LinkedIn Share/Posts API (Requires User URN: 'urn:li:person:XXXXX')
   const res = await fetch('https://linkedin.com', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${LINKEDIN_TOKEN}`, 'X-Restli-Protocol-Version': '2.0.0', 'Content-Type': 'application/json' },
+    headers: { 
+      'Authorization': `Bearer ${LINKEDIN_TOKEN}`, 
+      'X-Restli-Protocol-Version': '2.0.0', 
+      'Content-Type': 'application/json' 
+    },
     body: JSON.stringify({
       author: LINKEDIN_URN,
       commentary: POST_TEXT,
@@ -40,21 +51,40 @@ async function postToLinkedIn() {
 }
 
 async function postToReddit() {
+  console.log('Sending to Reddit...');
+  // Uses Reddit OAuth2 endpoint (Requires User Access Token & User Agent)
   const res = await fetch('https://reddit.com', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${REDDIT_TOKEN}`, 'User-Agent': 'GHActionsSocialScheduler/1.0', 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ sr: REDDIT_SUBREDDIT, kind: 'self', title: POST_TEXT.slice(0, 50), text: POST_TEXT })
+    headers: { 
+      'Authorization': `Bearer ${REDDIT_TOKEN}`, 
+      'User-Agent': 'CloudflareCrossPoster/1.0', 
+      'Content-Type': 'application/x-www-form-urlencoded' 
+    },
+    body: new URLSearchParams({ 
+      sr: REDDIT_SUBREDDIT, 
+      kind: 'self', 
+      title: POST_TEXT.slice(0, 50), 
+      text: POST_TEXT 
+    })
   });
   console.log(`Reddit Status: ${res.status} - ${await res.text()}`);
 }
 
 async function postToPinterest() {
+  console.log('Sending to Pinterest...');
+  // Uses Pinterest API v5 Pins endpoint (Image link required)
   const res = await fetch('https://pinterest.com', {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${PINTEREST_TOKEN}`, 'Content-Type': 'application/json' },
+    headers: { 
+      'Authorization': `Bearer ${PINTEREST_TOKEN}`, 
+      'Content-Type': 'application/json' 
+    },
     body: JSON.stringify({
       board_id: PINTEREST_BOARD_ID,
-      media_source: { source_type: 'image_url', url: MEDIA_URL || 'https://placeholder.com' },
+      media_source: { 
+        source_type: 'image_url', 
+        url: MEDIA_URL || 'https://picsum.photos' // Fallback image if empty
+      },
       note: POST_TEXT
     })
   });
@@ -62,6 +92,6 @@ async function postToPinterest() {
 }
 
 run().catch(err => {
-  console.error(err);
+  console.error('Execution Failed:', err);
   process.exit(1);
 });

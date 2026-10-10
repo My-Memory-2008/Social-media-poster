@@ -1,4 +1,48 @@
-name: Cross-Post Instantly
+# name: Cross-Post Instantly
+
+# on:
+#   repository_dispatch:
+#     types: [instant_post]
+
+# jobs:
+#   publish:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+
+#       - name: Install Dependencies
+#         run: |
+#           npm init -y
+#           npm install node-fetch
+
+#       - name: Execute Publisher
+#         env:
+#           # API Tokens & Configuration Secrets
+#           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+#           LINKEDIN_TOKEN: ${{ secrets.LINKEDIN_TOKEN }}
+#           LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
+#           REDDIT_TOKEN: ${{ secrets.REDDIT_TOKEN }}
+#           REDDIT_SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
+#           PINTEREST_TOKEN: ${{ secrets.PINTEREST_TOKEN }}
+#           PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
+          
+#           # User Data from UI
+#           POST_TEXT: ${{ github.event.client_payload.text }}
+#           POST_PLATFORMS: ${{ toJson(github.event.client_payload.platforms) }}
+#           MEDIA_URL: ${{ github.event.client_payload.media_url }}
+#         run: node scripts/publish.js
+
+
+
+
+
+name: Cross-Post Instantly with Qwen AI SEO Optimization
 
 on:
   repository_dispatch:
@@ -21,9 +65,22 @@ jobs:
           npm init -y
           npm install node-fetch
 
+      - name: Install Ollama Locally
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Start Ollama Server & Pull Qwen2.5-VL
+        run: |
+          # Boot Ollama server in background channel
+          ollama serve &
+          # Pause momentarily for server validation handshake
+          sleep 5
+          echo "Pulling Qwen2.5-VL model layers..."
+          ollama pull qwen2.5-vl:3b
+
       - name: Execute Publisher
         env:
-          # API Tokens & Configuration Secrets
+          # Social API secrets configuration mappings
           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
           LINKEDIN_TOKEN: ${{ secrets.LINKEDIN_TOKEN }}
           LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
@@ -32,8 +89,9 @@ jobs:
           PINTEREST_TOKEN: ${{ secrets.PINTEREST_TOKEN }}
           PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
           
-          # User Data from UI
+          # User Data payload mappings delivered from frontend
           POST_TEXT: ${{ github.event.client_payload.text }}
           POST_PLATFORMS: ${{ toJson(github.event.client_payload.platforms) }}
-          MEDIA_URL: ${{ github.event.client_payload.media_url }}
+          MEDIA_TYPE: ${{ github.event.client_payload.mediaType }}
+          MEDIA_URLS: ${{ toJson(github.event.client_payload.mediaUrls) }}
         run: node scripts/publish.js

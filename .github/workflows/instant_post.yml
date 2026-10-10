@@ -1,8 +1,8 @@
-name: Publish Scheduled Social Media Post
+name: Cross-Post Instantly
 
 on:
   repository_dispatch:
-    types: [schedule_post]
+    types: [instant_post]
 
 jobs:
   publish:
@@ -14,23 +14,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-size: 20
+          node-version: 20
 
       - name: Install Dependencies
-        run: npm install @actions/core node-fetch
-
-      - name: Handle Scheduled Delay
         run: |
-          # Calculate how many seconds we need to wait before posting
-          DELAY_SECONDS=${{ github.event.client_payload.delay_seconds }}
-          if [ "$DELAY_SECONDS" -gt 0 ]; then
-            echo "Waiting for $DELAY_SECONDS seconds before publishing..."
-            sleep $DELAY_SECONDS
-          fi
+          npm init -y
+          npm install node-fetch
 
-      - name: Run Publisher Script
+      - name: Execute Publisher
         env:
-          # Pass social media tokens securely from GitHub Repository Secrets
+          # API Tokens & Configuration Secrets
           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
           LINKEDIN_TOKEN: ${{ secrets.LINKEDIN_TOKEN }}
           LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
@@ -39,7 +32,7 @@ jobs:
           PINTEREST_TOKEN: ${{ secrets.PINTEREST_TOKEN }}
           PINTEREST_BOARD_ID: ${{ secrets.PINTEREST_BOARD_ID }}
           
-          # Pass the actual user post payload from the website interface
+          # User Data from UI
           POST_TEXT: ${{ github.event.client_payload.text }}
           POST_PLATFORMS: ${{ toJson(github.event.client_payload.platforms) }}
           MEDIA_URL: ${{ github.event.client_payload.media_url }}

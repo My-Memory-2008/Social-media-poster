@@ -1,3 +1,47 @@
+# name: Post to Social Media
+
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       seo_file:
+#         description: 'Path to SEO results file'
+#         required: true
+#         type: string
+#   push:
+#     paths:
+#       - 'seo-results/**'
+
+# jobs:
+#   post-social:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.11'
+#       - name: Install dependencies
+#         run: pip install -r requirements.txt
+#       - name: Post to Twitter and Pinterest
+#         env:
+#           TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+#           TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+#           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+#           TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+#           PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+#           SEO_FILE: ${{ github.event.inputs.seo_file || '' }}
+#         run: python scripts/post-social.py
+
+
+
+
+
+
+
+
+
+
 name: Post to Social Media
 
 on:
@@ -7,6 +51,11 @@ on:
         description: 'Path to SEO results file'
         required: true
         type: string
+      platforms:
+        description: 'Comma-separated platforms (pinterest,twitter,instagram,youtube,tiktok)'
+        required: true
+        type: string
+        default: 'pinterest'
   push:
     paths:
       - 'seo-results/**'
@@ -23,12 +72,16 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Post to Twitter and Pinterest
+      - name: Post to selected platforms
         env:
           TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
           TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
           PINTEREST_ACCESS_TOKEN: ${{ secrets.PINTEREST_ACCESS_TOKEN }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
           SEO_FILE: ${{ github.event.inputs.seo_file || '' }}
+          PLATFORMS: ${{ github.event.inputs.platforms || 'pinterest' }}
         run: python scripts/post-social.py

@@ -2,49 +2,44 @@ export async function onRequestPost(context) {
   try {
     const { request, env } = context;
     
-    // 1. Validate environment
+    // Validate token exists
     const GITHUB_TOKEN = env.GITHUB_TOKEN;
     if (!GITHUB_TOKEN) {
       return new Response(JSON.stringify({ 
         error: 'Server misconfiguration',
-        details: 'GITHUB_TOKEN secret is missing in Cloudflare Pages settings'
+        details: 'GITHUB_TOKEN secret missing in Cloudflare Pages settings'
       }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 2. Parse form data safely
-    let formData, file, path, message;
-    try {
-      formData = await request.formData();
-      file = formData.get('file');
-      path = formData.get('path');
-      message = formData.get('message') || 'Auto-upload';
-    } catch (e) {
-      return new Response(JSON.stringify({ 
-        error: 'Invalid request format',
-        details: 'Could not parse multipart form data: ' + e.message
-      }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-    }
+    // Parse form data
+    const formData = await request.formData();
+    const file = formData.get('file');
+    const path = formData.get('path');
+    const message = formData.get('message') || 'Auto-upload';
 
     if (!file || !path) {
       return new Response(JSON.stringify({ 
         error: 'Missing required fields',
-        details: 'Both "file" and "path" form fields are required'
+        details: 'Both "file" and "path" are required'
       }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 3. Check file size (Cloudflare limit ~100MB)
-    if (file.size > 95 * 1024 * 1024) {
+    // CRITICAL: Check file size BEFORE processing (Cloudflare limit is 10MB for Workers)
+    const MAX_SIZE = 9 * 1024 * 1024; // 9MB safe limit
+    if (file.size > MAX_SIZE) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(1);
       return new Response(JSON.stringify({ 
-        error: 'File too large',
-        details: `File is ${(file.size / 1024 / 1024).toFixed(1)}MB. Cloudflare limit is ~100MB.`
+        error: 'File too large for direct upload',
+        details: `File is ${sizeMB}MB. Maximum allowed is 9MB via Cloudflare Functions.`,
+        hint: 'For larger files, use GitHub CLI or Git LFS instead.'
       }), { status: 413, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 4. Convert to base64
+    // Convert to base64
     const buffer = await file.arrayBuffer();
     const base64Content = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    // 5. Call GitHub API
+    // Upload to GitHub
     const githubUrl = `https://api.github.com/repos/My-Memory-2008/Social-media-poster/contents/${path}`;
     const githubResponse = await fetch(githubUrl, {
       method: 'PUT',
@@ -60,38 +55,30 @@ export async function onRequestPost(context) {
       })
     });
 
-    // 6. Handle GitHub API errors properly
     if (!githubResponse.ok) {
       let ghError = 'Unknown GitHub error';
       try {
         const ghBody = await githubResponse.text();
         const ghJson = JSON.parse(ghBody);
         ghError = ghJson.message || ghJson.errors?.[0]?.message || ghBody;
-      } catch (e) { /* ignore parse errors */ }
+      } catch (e) {}
 
       return new Response(JSON.stringify({
         error: 'GitHub API rejected upload',
         status: githubResponse.status,
-        details: ghError,
-        hint: githubResponse.status === 401 ? 'Token invalid/expired' :
-              githubResponse.status === 403 ? 'Token lacks repo scope' :
-              githubResponse.status === 422 ? 'File may already exist or name invalid' :
-              'See details above'
+        details: ghError
       }), { status: githubResponse.status, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // 7. Success
     return new Response(JSON.stringify({ success: true, path }), {
       headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (err) {
-    // Catch-all for ANY unexpected error
-    console.error('UPLOAD FUNCTION CRASH:', err);
+    console.error('UPLOAD FUNCTION ERROR:', err);
     return new Response(JSON.stringify({
       error: 'Internal server error',
-      details: err.message,
-      stack: err.stack?.split('\n')[0] // First line only
+      details: err.message
     }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }

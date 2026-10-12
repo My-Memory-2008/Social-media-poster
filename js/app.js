@@ -184,12 +184,22 @@ class SocialMediaPoster {
 
     
 
-    async uploadFilesViaProxy(files, type) {
+
+
+async uploadFilesViaProxy(files, type) {
     const uploadedPaths = [];
     const timestamp = Date.now();
     
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        
+        // PRE-CHECK FILE SIZE IN BROWSER (saves unnecessary upload attempts)
+        const MAX_SIZE = 9 * 1024 * 1024; // 9MB
+        if (file.size > MAX_SIZE) {
+            const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+            throw new Error(`${file.name}: File too large (${sizeMB}MB). Max 9MB for direct upload.`);
+        }
+        
         const path = 'content/' + type + '/' + timestamp + '_' + file.name;
         
         const formData = new FormData();
@@ -203,7 +213,7 @@ class SocialMediaPoster {
         });
         
         if (!response.ok) {
-            // FIX: Read body ONCE as text, then try to parse as JSON
+            // Read body ONCE as text
             const rawBody = await response.text();
             let errorMsg = 'Upload failed';
             
@@ -212,15 +222,13 @@ class SocialMediaPoster {
                 errorMsg = errData.details || errData.error || errorMsg;
                 if (errData.hint) errorMsg += '\n💡 ' + errData.hint;
             } catch(e) {
-                // If not valid JSON, use raw text
                 errorMsg = rawBody || errorMsg;
             }
             
             throw new Error(file.name + ': ' + errorMsg);
         }
         
-        // Only parse as JSON on success
-        const result = await response.json();
+        await response.json(); // Consume success response
         uploadedPaths.push(path);
         this.logStatus('✓ Uploaded: ' + file.name, 'success');
     }
@@ -228,6 +236,8 @@ class SocialMediaPoster {
     return uploadedPaths;
 }
 
+    
+    
     
     
     async triggerWorkflowViaProxy(workflowFile, inputs) {

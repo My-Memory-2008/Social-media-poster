@@ -182,34 +182,42 @@ class SocialMediaPoster {
     }
     
     async uploadFilesViaProxy(files, type) {
-        const uploadedPaths = [];
-        const timestamp = Date.now();
+    const uploadedPaths = [];
+    const timestamp = Date.now();
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const path = 'content/' + type + '/' + timestamp + '_' + file.name;
         
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const path = 'content/' + type + '/' + timestamp + '_' + file.name;
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('path', path);
-            formData.append('message', 'Auto-upload: ' + file.name);
-            
-            const response = await fetch('/_functions/upload', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) {
-                const err = await response.text();
-                throw new Error('Upload failed for ' + file.name + ': ' + err);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', path);
+        formData.append('message', 'Auto-upload: ' + file.name);
+        
+        const response = await fetch('/_functions/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            // Parse JSON error response
+            let errorMsg = 'Upload failed';
+            try {
+                const errData = await response.json();
+                errorMsg = errData.details || errData.error || errorMsg;
+                if (errData.hint) errorMsg += '\n💡 ' + errData.hint;
+            } catch(e) {
+                errorMsg = await response.text() || errorMsg;
             }
-            
-            uploadedPaths.push(path);
-            this.logStatus('✓ Uploaded: ' + file.name, 'success');
+            throw new Error(file.name + ': ' + errorMsg);
         }
         
-        return uploadedPaths;
+        uploadedPaths.push(path);
+        this.logStatus('✓ Uploaded: ' + file.name, 'success');
     }
+    
+    return uploadedPaths;
+}
     
     async triggerWorkflowViaProxy(workflowFile, inputs) {
         const response = await fetch('/_functions/trigger-workflow', {

@@ -180,7 +180,10 @@ class SocialMediaPoster {
             console.error(error);
         }
     }
+
+
     
+
     async uploadFilesViaProxy(files, type) {
     const uploadedPaths = [];
     const timestamp = Date.now();
@@ -200,24 +203,32 @@ class SocialMediaPoster {
         });
         
         if (!response.ok) {
-            // Parse JSON error response
+            // FIX: Read body ONCE as text, then try to parse as JSON
+            const rawBody = await response.text();
             let errorMsg = 'Upload failed';
+            
             try {
-                const errData = await response.json();
+                const errData = JSON.parse(rawBody);
                 errorMsg = errData.details || errData.error || errorMsg;
                 if (errData.hint) errorMsg += '\n💡 ' + errData.hint;
             } catch(e) {
-                errorMsg = await response.text() || errorMsg;
+                // If not valid JSON, use raw text
+                errorMsg = rawBody || errorMsg;
             }
+            
             throw new Error(file.name + ': ' + errorMsg);
         }
         
+        // Only parse as JSON on success
+        const result = await response.json();
         uploadedPaths.push(path);
         this.logStatus('✓ Uploaded: ' + file.name, 'success');
     }
     
     return uploadedPaths;
 }
+
+    
     
     async triggerWorkflowViaProxy(workflowFile, inputs) {
         const response = await fetch('/_functions/trigger-workflow', {

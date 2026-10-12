@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GitHub Pure Social Hub</title>
+  <title>Social Media Dashboard</title>
   <style>
     :root {
       --primary: #0070f3;
@@ -23,14 +23,6 @@
     .panel {
       background: var(--card-bg); width: 100%; max-width: 600px; padding: 30px;
       border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid var(--border);
-    }
-    .config-box {
-      background: #fafbfc; border: 1px solid var(--border); border-radius: 8px;
-      padding: 15px; margin-bottom: 20px; font-size: 13px;
-    }
-    .config-box input {
-      width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 10px;
-      box-sizing: border-box; border: 1px solid var(--border); border-radius: 4px;
     }
     .tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
     .tab {
@@ -75,18 +67,8 @@
 <body>
 
 <div class="panel">
-  <h2 style="margin: 0 0 5px 0;">📣 Pure GitHub Cross-Poster</h2>
-  <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:15px;">Local browser engine - Zero server storage configuration.</span>
-
-  <!-- Local Encryption Setup panel -->
-  <div class="config-box">
-    <label style="font-size:12px; margin-bottom:2px;">🛠️ GitHub Configuration Connection (Stored locally in your browser)</label>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-      <input type="text" id="ghOwner" placeholder="GitHub Username" onchange="saveConfig()">
-      <input type="text" id="ghRepo" placeholder="Repository Name" onchange="saveConfig()">
-    </div>
-    <input type="password" id="ghPat" placeholder="Paste GitHub Personal Access Token (PAT)" onchange="saveConfig()">
-  </div>
+  <h2 style="margin: 0 0 5px 0;">📣 Social Cross-Poster</h2>
+  <span style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:25px;">AI-Powered cross-platform posting hub.</span>
   
   <div class="tabs">
     <div class="tab active" id="imgTabBtn" onclick="switchTab('image-tab')">🖼️ Multi-Image Post</div>
@@ -94,7 +76,7 @@
   </div>
   
   <div class="group">
-    <label for="postText">Message Idea Content</label>
+    <label for="postText">Message Content / Base Idea</label>
     <textarea id="postText" placeholder="What are we sharing with the world today?"></textarea>
   </div>
 
@@ -108,7 +90,7 @@
     </div>
   </div>
 
-  <!-- Images Section -->
+  <!-- Multi-Image Drop Area -->
   <div id="image-tab" class="tab-content">
     <div class="group">
       <label>Bulk Image Assets (Max 20)</label>
@@ -120,7 +102,7 @@
     </div>
   </div>
 
-  <!-- Video Section -->
+  <!-- Video Drop Area -->
   <div id="video-tab" class="tab-content" style="display:none;">
     <div class="group">
       <label>Video File Asset</label>
@@ -133,28 +115,12 @@
   </div>
 
   <button class="btn" id="submitBtn" onclick="broadcastPost()">Publish Now</button>
-  <span id="statusMessage" class="status-lbl" style="display:none;">Packing local file chunks into Base64 payload...</span>
+  <span id="statusMessage" class="status-lbl" style="display:none;">Converting media files to Base64 data payloads...</span>
 </div>
-
-
-
 <script>
   let activeTab = 'image-tab';
   let memoryImages = []; 
   let memoryVideo = null;
-
-  // Auto-restore configuration parameters from local browser memory on load
-  window.addEventListener('DOMContentLoaded', () => {
-    if(localStorage.getItem('gh_owner')) document.getElementById('ghOwner').value = localStorage.getItem('gh_owner');
-    if(localStorage.getItem('gh_repo')) document.getElementById('ghRepo').value = localStorage.getItem('gh_repo');
-    if(localStorage.getItem('gh_pat')) document.getElementById('ghPat').value = localStorage.getItem('gh_pat');
-  });
-
-  function saveConfig() {
-    localStorage.setItem('gh_owner', document.getElementById('ghOwner').value.trim());
-    localStorage.setItem('gh_repo', document.getElementById('ghRepo').value.trim());
-    localStorage.setItem('gh_pat', document.getElementById('ghPat').value.trim());
-  }
 
   function switchTab(tabId) {
     activeTab = tabId;
@@ -180,7 +146,7 @@
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve({ name: file.name, data: reader.result.split(',')[1] });
+      reader.onload = () => resolve({ name: file.name, data: reader.result.split(',')[1] }); // Extract clean base64 data string
       reader.onerror = error => reject(error);
     });
   }
@@ -217,18 +183,9 @@
   async function broadcastPost() {
     const text = document.getElementById('postText').value.trim();
     const platforms = Array.from(document.querySelectorAll('.channel:checked')).map(el => el.value);
-    
-    // Read local browser execution context variables
-    const REPO_OWNER = document.getElementById('ghOwner').value.trim();
-    const REPO_NAME = document.getElementById('ghRepo').value.trim();
-    const GITHUB_PAT = document.getElementById('ghPat').value.trim();
 
-    if (!REPO_OWNER || !REPO_NAME || !GITHUB_PAT) {
-      alert("Please enter your GitHub Username, Repository Name, and Personal Access Token in the top configuration box.");
-      return;
-    }
     if (!text || platforms.length === 0) {
-      alert("Please write a text description and select target publish channels.");
+      alert("Please compose a message and select your social channels.");
       return;
     }
 
@@ -238,40 +195,28 @@
     const activeFiles = activeTab === 'image-tab' ? memoryImages : (memoryVideo ? [memoryVideo] : []);
 
     const payload = {
-      event_type: "instant_post",
-      client_payload: {
-        text: text,
-        platforms: platforms,
-        mediaType: activeTab === 'image-tab' ? 'images' : 'video',
-        files: activeFiles 
-      }
+      text: text,
+      platforms: platforms,
+      mediaType: activeTab === 'image-tab' ? 'images' : 'video',
+      files: activeFiles 
     };
 
     try {
-      // Direct REST communication dispatch using standard cross-origin token parameters
-      const response = await fetch(`https://github.com{REPO_OWNER}/${REPO_NAME}/dispatches`, {
+      // POST locally to your safe Cloudflare Function endpoint router file
+      const response = await fetch('/api/schedule', {
         method: 'POST',
-        mode: 'cors', // Explicitly negotiate CORS handshakes safely with api.github.com
-        headers: {
-          'Authorization': `token ${GITHUB_PAT}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      if (response.status === 204) {
-        alert("Broadcast successfully dispatched to GitHub Actions engine!");
-        document.getElementById('postText').value = '';
-        document.getElementById('imagePreviews').innerHTML = '';
-        document.getElementById('videoPreviews').innerHTML = '';
-        memoryImages = [];
-        memoryVideo = null;
+      if (response.ok) {
+        alert("Broadcast successfully dispatched to your GitHub Actions queue!");
+        location.reload();
       } else {
-        alert(`GitHub API Error (${response.status}): ` + await response.text());
+        alert("Server Router Error: " + await response.text());
       }
     } catch (err) {
-      alert("Execution Error: Direct browser context was blocked. Ensure your PAT string has correct permissions. Details: " + err.message);
+      alert("Network Connection Error: " + err.message);
     } finally {
       document.getElementById('statusMessage').style.display = 'none';
       document.getElementById('submitBtn').disabled = false;

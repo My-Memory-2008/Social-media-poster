@@ -4,39 +4,59 @@ on:
   workflow_dispatch:
     inputs:
       file_paths:
-        description: 'Paths to uploaded files'
+        description: 'Comma-separated paths to uploaded files'
         required: true
         type: string
       content_type:
-        description: 'Type of content'
+        description: 'Type of content (video, image, mixed)'
         required: true
         type: string
-  push:
-    paths:
-      - 'content/**'
 
 jobs:
   generate-seo:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          
+      - name: Download uploaded files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILE_PATHS: ${{ github.event.inputs.file_paths }}
+        run: |
+          mkdir -p temp_files
+          IFS=',' read -ra PATHS <<< "$FILE_PATHS"
+          for path in "${PATHS[@]}"; do
+            echo "Downloading: $path"
+            filename=$(basename "$path")
+            curl -H "Authorization: token $GITHUB_TOKEN" \
+                 -H "Accept: application/vnd.github.v3.raw" \
+                 -L "https://api.github.com/repos/${{ github.repository }}/contents/$path" \
+                 -o "temp_files/$filename"
+          done
+          
       - name: Run Qwen 2.5 Vision for SEO
         env:
           QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
-          FILE_PATHS: ${{ github.event.inputs.file_paths || '' }}
-          CONTENT_TYPE: ${{ github.event.inputs.content_type || 'mixed' }}
-        run: python scripts/generate-seo.py
+          CONTENT_TYPE: ${{ github.event.inputs.content_type }}
+        run: |
+          mkdir -p seo-results
+          python scripts/generate-seo.py temp_files/ $CONTENT_TYPE
+          
       - name: Commit SEO results
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add seo-results/
-          git commit -m "Add generated SEO results" || echo "No changes"
+          git commit -m "Add generated SEO results [skip ci]" || echo "No changes to commit"
           git push

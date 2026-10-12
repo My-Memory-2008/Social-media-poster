@@ -1,54 +1,52 @@
 export async function onRequestPost(context) {
-  const { request, env } = context;
-  
-  const GITHUB_TOKEN = env.GITHUB_TOKEN; 
-  
-  if (!GITHUB_TOKEN) {
-    // Return JSON error instead of plain text
-    return new Response(JSON.stringify({ 
-      error: 'Missing GITHUB_TOKEN in Cloudflare environment',
-      hint: 'Check Cloudflare Pages Settings > Environment Variables'
-    }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-
   try {
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const path = formData.get('path');
-    const message = formData.get('message') || 'Upload via Auto-Poster';
+    const { request, env } = context;
+    
+    // 1. Validate environment
+    const GITHUB_TOKEN = env.GITHUB_TOKEN;
+    if (!GITHUB_TOKEN) {
+      return new Response(JSON.stringify({ 
+        error: 'Server misconfiguration',
+        details: 'GITHUB_TOKEN secret is missing in Cloudflare Pages settings'
+      }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // 2. Parse form data safely
+    let formData, file, path, message;
+    try {
+      formData = await request.formData();
+      file = formData.get('file');
+      path = formData.get('path');
+      message = formData.get('message') || 'Auto-upload';
+    } catch (e) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid request format',
+        details: 'Could not parse multipart form data: ' + e.message
+      }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
 
     if (!file || !path) {
-      return new Response(JSON.stringify({ error: 'Missing file or path parameter' }), { 
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(JSON.stringify({ 
+        error: 'Missing required fields',
+        details: 'Both "file" and "path" form fields are required'
+      }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Check file size (Cloudflare limit is ~100MB)
-    const fileSize = file.size;
-    if (fileSize > 95 * 1024 * 1024) {
+    // 3. Check file size (Cloudflare limit ~100MB)
+    if (file.size > 95 * 1024 * 1024) {
       return new Response(JSON.stringify({ 
         error: 'File too large',
-        size: fileSize,
-        limit: '95MB',
-        hint: 'Cloudflare Functions have a ~100MB request limit. Try a smaller file.'
-      }), { 
-        status: 413,
-        headers: { 'Content-Type': 'application/json' }
-      });
+        details: `File is ${(file.size / 1024 / 1024).toFixed(1)}MB. Cloudflare limit is ~100MB.`
+      }), { status: 413, headers: { 'Content-Type': 'application/json' } });
     }
 
+    // 4. Convert to base64
     const buffer = await file.arrayBuffer();
     const base64Content = btoa(String.fromCharCode(...new Uint8Array(buffer)));
 
-    const owner = 'My-Memory-2008';
-    const repo = 'Social-media-poster';
-    const githubUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-    
-    const response = await fetch(githubUrl, {
+    // 5. Call GitHub API
+    const githubUrl = `https://api.github.com/repos/My-Memory-2008/Social-media-poster/contents/${path}`;
+    const githubResponse = await fetch(githubUrl, {
       method: 'PUT',
       headers: {
         'Authorization': `token ${GITHUB_TOKEN}`,
@@ -56,50 +54,44 @@ export async function onRequestPost(context) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: message,
+        message,
         content: base64Content,
         branch: 'main'
       })
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      let parsedError;
+    // 6. Handle GitHub API errors properly
+    if (!githubResponse.ok) {
+      let ghError = 'Unknown GitHub error';
       try {
-        parsedError = JSON.parse(errText);
-      } catch(e) {
-        parsedError = { message: errText };
-      }
-      
-      console.error('GitHub API Error:', parsedError);
-      
-      return new Response(JSON.stringify({ 
-        error: 'GitHub API returned error',
-        status: response.status,
-        details: parsedError.message || parsedError.errors?.[0]?.message || errText,
-        hint: response.status === 401 ? 'Invalid or expired GITHUB_TOKEN' :
-              response.status === 403 ? 'Token missing repo scope or rate limited' :
-              response.status === 422 ? 'Path may already exist or invalid filename' :
-              'Unknown GitHub API error'
-      }), { 
-        status: response.status,
-        headers: { 'Content-Type': 'application/json' }
-      });
+        const ghBody = await githubResponse.text();
+        const ghJson = JSON.parse(ghBody);
+        ghError = ghJson.message || ghJson.errors?.[0]?.message || ghBody;
+      } catch (e) { /* ignore parse errors */ }
+
+      return new Response(JSON.stringify({
+        error: 'GitHub API rejected upload',
+        status: githubResponse.status,
+        details: ghError,
+        hint: githubResponse.status === 401 ? 'Token invalid/expired' :
+              githubResponse.status === 403 ? 'Token lacks repo scope' :
+              githubResponse.status === 422 ? 'File may already exist or name invalid' :
+              'See details above'
+      }), { status: githubResponse.status, headers: { 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ success: true, path: path }), {
+    // 7. Success
+    return new Response(JSON.stringify({ success: true, path }), {
       headers: { 'Content-Type': 'application/json' }
     });
-    
-  } catch (e) {
-    console.error('Upload function error:', e);
-    return new Response(JSON.stringify({ 
+
+  } catch (err) {
+    // Catch-all for ANY unexpected error
+    console.error('UPLOAD FUNCTION CRASH:', err);
+    return new Response(JSON.stringify({
       error: 'Internal server error',
-      details: e.message,
-      stack: e.stack
-    }), { 
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+      details: err.message,
+      stack: err.stack?.split('\n')[0] // First line only
+    }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }

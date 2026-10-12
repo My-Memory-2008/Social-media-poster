@@ -3,8 +3,8 @@ class SocialMediaPoster {
         this.selectedFiles = { video: [], image: [], mixed: [] };
         this.selectedPlatforms = [];
         this.githubToken = null; // Will be set via environment or prompt
-        this.repoOwner = 'YOUR_GITHUB_USERNAME'; // CHANGE THIS
-        this.repoName = 'social-media-auto-poster'; // CHANGE THIS IF DIFFERENT
+        this.repoOwner = 'My-Memory-2008'; // CHANGE THIS
+        this.repoName = 'Social-media-poster'; // CHANGE THIS IF DIFFERENT
         this.branch = 'main';
         this.init();
     }

@@ -1,0 +1,42 @@
+name: Generate SEO with Qwen 2.5 Vision
+
+on:
+  workflow_dispatch:
+    inputs:
+      file_paths:
+        description: 'Paths to uploaded files'
+        required: true
+        type: string
+      content_type:
+        description: 'Type of content'
+        required: true
+        type: string
+  push:
+    paths:
+      - 'content/**'
+
+jobs:
+  generate-seo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run Qwen 2.5 Vision for SEO
+        env:
+          QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+          FILE_PATHS: ${{ github.event.inputs.file_paths || '' }}
+          CONTENT_TYPE: ${{ github.event.inputs.content_type || 'mixed' }}
+        run: python scripts/generate-seo.py
+      - name: Commit SEO results
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add seo-results/
+          git commit -m "Add generated SEO results" || echo "No changes"
+          git push

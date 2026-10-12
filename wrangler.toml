@@ -1,0 +1,11 @@
+name = "social-media-auto-poster"
+compatibility_date = "2024-01-01"
+
+[build]
+command = ""
+directory = "src"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

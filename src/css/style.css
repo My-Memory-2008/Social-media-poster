@@ -1,0 +1,24 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+.container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; text-align: center; }
+header h1 { font-size: 2.5em; margin-bottom: 10px; }
+.tabs { display: flex; background: #f8f9fa; border-bottom: 2px solid #e9ecef; }
+.tab-btn { flex: 1; padding: 20px; border: none; background: transparent; cursor: pointer; font-size: 1.1em; font-weight: 600; color: #6c757d; transition: all 0.3s ease; }
+.tab-btn:hover { background: #e9ecef; }
+.tab-btn.active { background: white; color: #667eea; border-bottom: 3px solid #667eea; }
+.tab-content { display: none; padding: 40px; }
+.tab-content.active { display: block; }
+.upload-area { border: 3px dashed #667eea; border-radius: 15px; padding: 60px 40px; text-align: center; cursor: pointer; transition: all 0.3s ease; background: #f8f9ff; }
+.upload-area:hover { border-color: #764ba2; background: #f0f2ff; }
+.upload-placeholder .icon { font-size: 4em; display: block; margin-bottom: 15px; }
+.preview-container { margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+.preview-item { position: relative; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.preview-item img, .preview-item video { width: 100%; height: 200px; object-fit: cover; }
+.btn-primary { display: block; width: 100%; margin-top: 30px; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 1.2em; font-weight: 600; cursor: pointer; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.status-panel, .results-panel { margin-top: 30px; padding: 20px; border-radius: 10px; }
+.status-panel { background: #f8f9fa; border-left: 4px solid #667eea; }
+.results-panel { background: #fff3cd; border-left: 4px solid #ffc107; }
+.hidden { display: none !important; }
+.seo-result { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
